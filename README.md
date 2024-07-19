@@ -1,5 +1,3 @@
-Here's a draft for your README file:
-
 ---
 
 # Recordsvita
@@ -74,5 +72,3 @@ For any questions or feedback, please reach out:
 - **GitHub:** [ayushkhale](https://github.com/ayushkhale)
 
 ---
-
-Feel free to edit or expand upon this draft as needed!
