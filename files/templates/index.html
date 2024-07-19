@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Form</title>
+    <link rel="stylesheet" href="../static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1 style="text-align:center;"><span class="animated-text">Trumen Technologies Pvt. Ltd.</span></h1>
+    </header>
+    <main class="main">
+        <section class="container1">
+            <h2 style="text-align:center;">Item Entry Form</h2>
+            <form id="itemForm" action="{{ url_for('add_item') }}" method="post">
+                <input type="hidden" id="itemId" name="itemId">
+                <label for="itemName">Item Name:</label>
+                <input type="text" id="itemName" name="itemName" required>
+                <br>
+                <label for="itemCode">Item Code:</label>
+                <input type="text" id="itemCode" name="itemCode" value="{{ next_item_code }}" readonly>
+                <br>
+                <label for="date">Date:</label>
+                <input type="date" id="date" name="date" required>
+                <br>
+                <label for="batchNo">Batch No:</label>
+                <input type="text" id="batchNo" name="batchNo" required>
+                <br>
+                <label for="price">Price:</label>
+                <input type="number" id="price" name="price" placeholder="₹" required>
+                <br>
+                <div class="btn">
+                    <button type="submit" class="button">Submit</button>
+                    <button type="reset" class="button" onclick="resetForm()">Reset</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="container2">
+            <h2 style="text-align:center;">Submitted Items</h2>
+            <div class="table-options">
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search">
+                <div class="dropdown">
+                    <button class="dropbtn">
+                        Show entries <i class="fa fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="javascript:void(0)" onclick="changeLimit(5)">5 entries</a>
+                        <a href="javascript:void(0)" onclick="changeLimit(10)">10 entries</a>
+                        <a href="javascript:void(0)" onclick="changeLimit(20)">20 entries</a>
+                        <a href="javascript:void(0)" onclick="changeLimit(0)">All entries</a>
+                    </div>
+                </div>
+            </div>
+            <table id="itemsTable">
+                <thead>
+                    <tr>
+                        <th class="sortable" style="text-align:center;" onclick="sortTable(0)">Sr no. <i class="fa fa-sort"></i></th>
+                        <th class="sortable" style="text-align:center;" onclick="sortTable(1)">Item Name <i class="fa fa-sort"></i></th>
+                        <th class="sortable" style="text-align:center;" onclick="sortTable(2)">Item Code <i class="fa fa-sort"></i></th>
+                        <th class="sortable" style="text-align:center;" onclick="sortTable(3)">Date <i class="fa fa-sort"></i></th>
+                        <th class="sortable" style="text-align:center;" onclick="sortTable(4)">Batch no. <i class="fa fa-sort"></i></th>
+                        <th class="sortable" style="text-align:center;" onclick="sortTable(5)">Price <i class="fa fa-sort"></i></th>
+                        <th style="text-align:center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td style="text-align:center;">{{ loop.index + (page - 1) * limit }}</td>
+                        <td style="text-align:center;">{{ item.itemName }}</td>
+                        <td style="text-align:center;">{{ item.itemCode }}</td>
+                        <td style="text-align:center;">{{ item.date }}</td>
+                        <td style="text-align:center;">{{ item.batchNo }}</td>
+                        <td style="text-align:center;">₹{{ item.price }}</td>
+                        <td style="text-align:center;">
+                            <button onclick="editItem('{{ item.id }}', '{{ item.itemName }}', '{{ item.itemCode }}', '{{ item.date }}', '{{ item.batchNo }}', '{{ item.price }}')" style="background:none;border:none;cursor:pointer;">
+                                <i class="fas fa-edit" style="color:rgb(255, 255, 255);"></i>
+                            </button>
+                            <form class="formnone" action="{{ url_for('delete_item', item_id=item.id) }}" method="post" style="display:inline;">
+                                <button type="submit" style="background:none;border:none;cursor:pointer;">
+                                    <i class="fas fa-trash-alt" style="color:rgb(255, 255, 255);"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div style="text-align: center; margin-top: 20px;">
+                {% if page > 1 %}
+                <a href="{{ url_for('index', page=page-1, limit=limit) }}" class="button" style="margin-right: 25px;">Previous</a>
+                {% endif %}
+                <span style="font-size: medium;">Page {{ page }} of {{ total_pages }}</span>
+                {% if page < total_pages %}
+                <a href="{{ url_for('index', page=page+1, limit=limit) }}" class="button" style="margin-left: 25px;">Next</a>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function editItem(id, name, code, date, batchNo, price) {
+            document.getElementById('itemId').value = id;
+            document.getElementById('itemName').value = name;
+            document.getElementById('itemCode').value = code;
+            document.getElementById('date').value = date;
+            document.getElementById('batchNo').value = batchNo;
+            document.getElementById('price').value = price;
+            document.getElementById('itemForm').action = '/edit/' + id;
+        }
+
+        function resetForm() {
+            document.getElementById('itemId').value = '';
+            document.getElementById('itemForm').action = '/add';
+        }
+
+        function searchTable() {
+            var input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("searchInput");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("itemsTable");
+            tr = table.getElementsByTagName("tr");
+            for (i = 1; i < tr.length; i++) {
+                tr[i].style.display = "none";
+                td = tr[i].getElementsByTagName("td");
+                for (var j = 0; j < td.length; j++) {
+                    if (td[j]) {
+                        txtValue = td[j].textContent || td[j].innerText;
+                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                            tr[i].style.display = "";
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        function sortTable(n) {
+            var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            table = document.getElementById("itemsTable");
+            switching = true;
+            dir = "asc";
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+                    if (dir == "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
+
+        function changeLimit(limit) {
+            window.location.href = `/?limit=${limit}&page=1`;
+        }
+    </script>
+</body>
+</html>
